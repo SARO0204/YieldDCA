@@ -60,7 +60,7 @@ contract DeployDCA is Script {
         console2.log("MarketAnalyzer deployed at:", address(marketAnalyzer));
 
         // 6. Deploy Module 4: Yield Analyzer
-        yieldAnalyzer = new YieldAnalyzer(address(vault));
+        yieldAnalyzer = new YieldAnalyzer(address(vault), msg.sender);
         console2.log("YieldAnalyzer deployed at:", address(yieldAnalyzer));
 
         vm.stopBroadcast();

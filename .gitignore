@@ -27,4 +27,4 @@ node_modules/
 dist/
 
 # Database
-*.db
+*.db.env
