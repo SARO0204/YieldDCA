@@ -45,7 +45,7 @@ contract MarketAnalyzer {
         uint256 volatilityBps = (raw.volatility * 10000) / 1e18;
         uint256 estimatedSlippage = volatilityBps / 2;
         uint256 estimatedPriceImpact = 0;
-        
+
         if (tradeSize != 0) {
             if (raw.liquidity == 0) revert InvalidLiquidity();
             // simple price impact model for demo: impact in bps = (tradeSize * 10000) / liquidity

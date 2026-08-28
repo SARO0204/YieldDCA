@@ -39,13 +39,13 @@ contract MarketAnalyzerTest is Test {
         assertEq(state.currentPrice, 2000e18);
         assertEq(state.twap, 1950e18);
         assertEq(state.priceDeviation, 50e18);
-        
+
         // volatility is 0.05e18. 0.05e18 * 10000 / 1e18 = 500 bps
         assertEq(state.volatility, 0.05e18);
-        
+
         // estimatedSlippage = volatilityBps / 2 = 500 / 2 = 250 bps
         assertEq(state.estimatedSlippage, 250);
-        
+
         // trade size is 0, so price impact is 0
         assertEq(state.estimatedPriceImpact, 0);
 

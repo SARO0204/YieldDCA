@@ -8,7 +8,7 @@ import {YieldDataTypes} from "./YieldDataTypes.sol";
 /**
  * @title YieldAnalyzer
  * @notice Provides view-only normalization of yield projections based on the active YieldVault.
- * @dev Computations assume simple interest based on the simulated APY to provide deterministic projections 
+ * @dev Computations assume simple interest based on the simulated APY to provide deterministic projections
  *      for the Decision Engine. It depends exclusively on Module 2 (YieldVault).
  */
 contract YieldAnalyzer is IYieldAnalyzer {
@@ -51,10 +51,10 @@ contract YieldAnalyzer is IYieldAnalyzer {
     function _computeState(uint256 principal) internal view returns (YieldDataTypes.YieldState memory) {
         // Fetch current APY from the vault
         uint256 currentAPY = vault.getCurrentAPY();
-        
+
         // Projected Yield = (Principal * APY / 10000) * (Time / 365 days)
         uint256 yearlyYield = (principal * currentAPY) / BPS_DENOMINATOR;
-        
+
         uint256 yield7D = (yearlyYield * DAYS_7) / DAYS_365;
         uint256 yield30D = (yearlyYield * DAYS_30) / DAYS_365;
 

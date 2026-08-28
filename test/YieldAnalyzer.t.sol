@@ -42,13 +42,13 @@ contract YieldAnalyzerTest is Test {
 
         assertEq(state.currentAPY, 500);
         assertEq(state.principalAssets, 1_000e6);
-        
+
         // 1,000 * 5% = 50 USDC per year
         assertEq(state.projectedYield365D, 50e6);
-        
+
         // 7 days: (50e6 * 7) / 365 = 958904
         assertEq(state.projectedYield7D, (uint256(50e6) * 7 days) / 365 days);
-        
+
         // 30 days: (50e6 * 30) / 365 = 4109589
         assertEq(state.projectedYield30D, (uint256(50e6) * 30 days) / 365 days);
     }
@@ -62,10 +62,10 @@ contract YieldAnalyzerTest is Test {
 
         assertEq(state.currentAPY, 1000);
         assertEq(state.principalAssets, 10_000e6);
-        
+
         // 10,000 * 10% = 1,000 USDC per year
         assertEq(state.projectedYield365D, 1_000e6);
-        
+
         assertEq(state.projectedYield7D, (uint256(1_000e6) * 7 days) / 365 days);
         assertEq(state.projectedYield30D, (uint256(1_000e6) * 30 days) / 365 days);
     }
