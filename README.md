@@ -155,6 +155,39 @@ ERC-4626 is the standard for tokenized yield-bearing vaults on Ethereum. In stan
 
 ---
 
+# MODULE 3 — Market Data & Market-State Analysis
+
+> *"Module 3 provides a deterministic, replaceable market-data abstraction that produces one normalized `MarketState` object for future decision-engine modules. It does not implement decision logic."*
+
+### 1. Responsibilities
+- **Abstract Market Data**: Provides the `IMarketDataProvider` interface to standardise access to market pricing and liquidity conditions.
+- **Normalize State**: Computes price deviation, slippage, and price impact via the `MarketAnalyzer` based on the raw data.
+- **Deterministic Mocking**: Provides a `MockMarketDataProvider` for deterministic simulation during development and testing of subsequent modules.
+
+### 2. Core Components
+- **`MarketDataTypes.sol`**: Contains `RawMarketData` (price, TWAP, volatility, liquidity) and `MarketState` (adds price deviation, estimated slippage, and price impact).
+- **`IMarketDataProvider.sol`**: Interface to retrieve raw market snapshot data.
+- **`MockMarketDataProvider.sol`**: Deterministic simulated implementation of `IMarketDataProvider`.
+- **`MarketAnalyzer.sol`**: Pure-view contract that calculates the `MarketState` (e.g. price impact and slippage derived from volatility/liquidity) for any given trade size.
+
+---
+
+# MODULE 4 — Yield Analysis
+
+> *"Module 4 provides a deterministic, view-only abstraction layer that analyzes the yield characteristics of the deposited capital in the YieldVault. It supplies normalized yield metrics to the future Decision Engine."*
+
+### 1. Responsibilities
+- **Abstract Yield Data**: Exposes yield projections decoupled from the low-level `YieldVault` logic via `IYieldAnalyzer`.
+- **Normalize State**: Provides a standard `YieldState` indicating current APY, principal assets, and expected absolute yield over 7-day, 30-day, and 365-day horizons.
+- **Deterministic Projections**: Calculates standard yield models securely for the future Decision Engine logic (which evaluates yield vs. market opportunities).
+
+### 2. Core Components
+- **`YieldDataTypes.sol`**: Contains `YieldState` definition outlining the normalized yield values.
+- **`IYieldAnalyzer.sol`**: Interface to retrieve calculated yield metrics.
+- **`YieldAnalyzer.sol`**: Stateless, view-only implementation calculating deterministic yield metrics given a specific user or asset principal.
+
+---
+
 ## Project Structure
 
 ```text
