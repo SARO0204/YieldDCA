@@ -1,0 +1,14 @@
+[
+  "function deposit(uint256 assets, address receiver) external returns (uint256)",
+  "function withdraw(uint256 assets, address receiver, address owner) external returns (uint256)",
+  "function redeem(uint256 shares, address receiver, address owner) external returns (uint256)",
+  "function totalAssets() external view returns (uint256)",
+  "function totalSupply() external view returns (uint256)",
+  "function balanceOf(address account) external view returns (uint256)",
+  "function getUserAssets(address user) external view returns (uint256)",
+  "function getUserShares(address user) external view returns (uint256)",
+  "function getCurrentAPY() external view returns (uint256)",
+  "function getVaultState() external view returns (uint256 totalAssets_, uint256 totalShares_, uint256 simulatedAPY_)",
+  "function convertToAssets(uint256 shares) external view returns (uint256)",
+  "function convertToShares(uint256 assets) external view returns (uint256)"
+]

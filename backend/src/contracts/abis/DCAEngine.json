@@ -1,0 +1,20 @@
+[
+  "function createStrategy(tuple(address inputToken, address targetToken, uint256 targetAllocation, uint256 frequency, uint256 maxDelay, uint256 minExecutionAmount, uint256 maxExecutionAmount, uint256 firstExecutionTime) params) external returns (uint256 strategyId)",
+  "function updateStrategy(uint256 strategyId, uint256 targetAllocation, uint256 frequency, uint256 maxDelay, uint256 minExecutionAmount, uint256 maxExecutionAmount) external",
+  "function pauseStrategy(uint256 strategyId) external",
+  "function resumeStrategy(uint256 strategyId) external",
+  "function cancelStrategy(uint256 strategyId) external",
+  "function getStrategy(uint256 strategyId) external view returns (tuple(address owner, address inputToken, address targetToken, uint256 targetAllocation, uint256 frequency, uint256 maxDelay, uint256 minExecutionAmount, uint256 maxExecutionAmount, uint256 nextExecutionTime, uint8 status))",
+  "function getUserStrategies(address user) external view returns (uint256[])",
+  "function getStrategyCount() external view returns (uint256)",
+  "function isExecutionDue(uint256 strategyId) external view returns (bool)",
+  "function isExecutionWindowOpen(uint256 strategyId) external view returns (bool)",
+  "function isOverdue(uint256 strategyId) external view returns (bool)",
+  "function getRemainingDelay(uint256 strategyId) external view returns (uint256)",
+  "function isValidExecutionAmount(uint256 strategyId, uint256 amount) external view returns (bool)",
+  "event StrategyCreated(uint256 indexed strategyId, address indexed owner, address indexed inputToken, address targetToken, uint256 targetAllocation, uint256 frequency, uint256 maxDelay, uint256 minExecutionAmount, uint256 maxExecutionAmount, uint256 firstExecutionTime)",
+  "event StrategyUpdated(uint256 indexed strategyId, address indexed owner, uint256 targetAllocation, uint256 frequency, uint256 maxDelay, uint256 minExecutionAmount, uint256 maxExecutionAmount)",
+  "event StrategyPaused(uint256 indexed strategyId, address indexed owner)",
+  "event StrategyResumed(uint256 indexed strategyId, address indexed owner)",
+  "event StrategyCancelled(uint256 indexed strategyId, address indexed owner)"
+]

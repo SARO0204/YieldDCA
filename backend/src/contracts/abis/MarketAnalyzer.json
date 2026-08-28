@@ -1,0 +1,4 @@
+[
+  "function getMarketState() external view returns (tuple(uint256 currentPrice, uint256 twap, int256 priceDeviation, uint256 volatility, uint256 liquidity, uint256 estimatedSlippage, uint256 estimatedPriceImpact, uint256 timestamp, bytes32 dataSource))",
+  "function getMarketState(uint256 tradeSize) external view returns (tuple(uint256 currentPrice, uint256 twap, int256 priceDeviation, uint256 volatility, uint256 liquidity, uint256 estimatedSlippage, uint256 estimatedPriceImpact, uint256 timestamp, bytes32 dataSource))"
+]
