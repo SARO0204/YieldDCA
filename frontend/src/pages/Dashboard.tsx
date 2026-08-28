@@ -3,6 +3,8 @@ import { useWallet } from '../hooks/useWallet';
 import { fetchDashboard, type DashboardData } from '../services/api';
 import { Wallet, Activity, RefreshCw, AlertCircle, Shield, Target } from 'lucide-react';
 import { ethers } from 'ethers';
+import { VaultActions } from '../components/VaultActions';
+import { StrategyActions } from '../components/StrategyActions';
 
 const Dashboard: React.FC = () => {
   const { address, connect, disconnect, error: walletError } = useWallet();
@@ -13,7 +15,7 @@ const Dashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetchDashboard(address || undefined);
+      const res = await fetchDashboard(address || undefined, "1"); // Assuming strategy ID 1 for now
       setData(res);
       setError(null);
     } catch (err: any) {
@@ -25,7 +27,6 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    // Auto refresh every 10s
     const intv = setInterval(loadData, 10000);
     return () => clearInterval(intv);
   }, [address]);
@@ -39,7 +40,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-8 max-w-7xl mx-auto">
+    <div className="min-h-screen p-8 max-w-7xl mx-auto pb-20">
       <header className="flex justify-between items-center mb-10 border-b border-slate-700 pb-6">
         <div>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
@@ -54,12 +55,12 @@ const Dashboard: React.FC = () => {
           </button>
           
           {address ? (
-            <button onClick={disconnect} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition text-sm">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <button onClick={disconnect} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-medium transition text-sm border border-slate-600">
+              <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
               {address.substring(0,6)}...{address.substring(address.length - 4)}
             </button>
           ) : (
-            <button onClick={connect} className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition">
+            <button onClick={connect} className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition shadow-lg shadow-indigo-600/20">
               <Wallet size={18} />
               Connect Wallet
             </button>
@@ -83,36 +84,51 @@ const Dashboard: React.FC = () => {
       {data && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           
+          {/* Strategy Panel */}
+          <div className="lg:col-span-1">
+            <StrategyActions strategy={data.strategy} onUpdate={loadData} />
+          </div>
+
           {/* Vault Panel */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 shadow-xl backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><Shield size={24}/></div>
-              <h2 className="text-xl font-semibold">Yield Vault</h2>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Total Assets</span>
-                <span className="font-medium text-white">{formatUnits(data.vault.totalAssets, 6)} USDC</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Total Shares</span>
-                <span className="font-medium text-white">{formatUnits(data.vault.totalShares, 18)}</span>
-              </div>
-              <div className="flex justify-between pt-3 border-t border-slate-700/50">
-                <span className="text-slate-400">Simulated APY</span>
-                <span className="font-bold text-green-400">{(Number(data.vault.simulatedAPY) / 100).toFixed(2)}%</span>
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 shadow-xl backdrop-blur-sm lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><Shield size={24}/></div>
+                <h2 className="text-xl font-semibold">Yield Vault</h2>
               </div>
               
-              {data.vault.user && (
-                <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                  <h3 className="text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wider">Your Position</h3>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Assets</span>
-                    <span className="text-white">{formatUnits(data.vault.user.assets, 6)} USDC</span>
-                  </div>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Total Assets</span>
+                  <span className="font-medium text-white">{formatUnits(data.vault.totalAssets, 6)} USDC</span>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Total Shares</span>
+                  <span className="font-medium text-white">{formatUnits(data.vault.totalShares, 18)}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-slate-700/50">
+                  <span className="text-slate-400">Simulated APY</span>
+                  <span className="font-bold text-green-400">{(Number(data.vault.simulatedAPY) / 100).toFixed(2)}%</span>
+                </div>
+                
+                {data.vault.user && (
+                  <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                    <h3 className="text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wider">Your Position</h3>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-400">Assets</span>
+                      <span className="text-white font-medium">{formatUnits(data.vault.user.assets, 6)} USDC</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">Shares</span>
+                      <span className="text-white">{formatUnits(data.vault.user.shares, 18)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="border-t md:border-t-0 md:border-l border-slate-700/50 pt-6 md:pt-0 md:pl-6 flex flex-col justify-between">
+              <VaultActions />
             </div>
           </div>
 
@@ -144,30 +160,42 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Market Intelligence */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 shadow-xl backdrop-blur-sm">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 shadow-xl backdrop-blur-sm lg:col-span-2">
              <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400"><Target size={24}/></div>
               <h2 className="text-xl font-semibold">Market Analysis</h2>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Asset Price</span>
-                <span className="font-medium text-white">${formatUnits(data.market.currentPrice, 18)}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Asset Price</span>
+                  <span className="font-medium text-white">${formatUnits(data.market.currentPrice, 18)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">TWAP (Oracle)</span>
+                  <span className="font-medium text-white">${formatUnits(data.market.twap, 18)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Price Deviation</span>
+                  <span className={`font-medium ${Number(data.market.priceDeviation) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                     {Number(data.market.priceDeviation) > 0 ? '+' : ''}{formatUnits(data.market.priceDeviation, 18)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">TWAP (Oracle)</span>
-                <span className="font-medium text-white">${formatUnits(data.market.twap, 18)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Price Deviation</span>
-                <span className={`font-medium ${Number(data.market.priceDeviation) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                   {Number(data.market.priceDeviation) > 0 ? '+' : ''}{formatUnits(data.market.priceDeviation, 18)}
-                </span>
-              </div>
-              <div className="flex justify-between pt-3 border-t border-slate-700/50">
-                <span className="text-slate-400">Volatility</span>
-                <span className="text-white">{(Number(data.market.volatility) / 1e16).toFixed(2)}%</span>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Volatility</span>
+                  <span className="text-white">{(Number(data.market.volatility) / 1e16).toFixed(2)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Liquidity Depth</span>
+                  <span className="text-white">{formatUnits(data.market.liquidity, 18)} ETH</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Est. Slippage</span>
+                  <span className="text-white">{(Number(data.market.estimatedSlippage) / 1e16).toFixed(4)}%</span>
+                </div>
               </div>
             </div>
           </div>

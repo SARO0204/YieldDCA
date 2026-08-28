@@ -1,0 +1,4 @@
+[
+  "function getYieldStateForUser(address user) external view returns (tuple(uint256 currentAPY, uint256 principalAssets, uint256 projectedYield7D, uint256 projectedYield30D, uint256 projectedYield365D))",
+  "function getYieldStateForAmount(uint256 principalAmount) external view returns (tuple(uint256 currentAPY, uint256 principalAssets, uint256 projectedYield7D, uint256 projectedYield30D, uint256 projectedYield365D))"
+]
