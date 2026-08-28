@@ -11,6 +11,7 @@ Currently implemented modules:
 * Module 2 — ERC-4626 Yield Vault
 * Module 3 — Market Data & Market-State Analysis
 * Module 4 — Yield Analysis
+* Module 5 — Yield-Aware DCA Decision Engine
 
 ## Architecture
 
@@ -23,7 +24,7 @@ Contract Services (ethers.js)
    ↓
 Ethereum / Anvil (Local Node)
    ↓
-Modules 1–4 (Smart Contracts)
+Modules 1–5 (Smart Contracts)
 ```
 
 ## Local Development Flow
@@ -58,7 +59,31 @@ Modules 1–4 (Smart Contracts)
    ```
    Open `http://localhost:5173` to view the Dashboard. Connect your wallet using the Anvil test network (Chain ID: 31337).
 
-## Application Layer (Modules 1-4 Integration)
+## Application Layer (Modules 1-5 Integration)
+
+### Module 5: Yield-Aware DCA Decision Engine
+The Decision Engine orchestrates intelligence from Modules 1-4 to make deterministic DCA execution decisions.
+
+**Core Inputs:**
+- DCA Strategy (Module 1)
+- Market State (Module 3)
+- Yield Analysis (Module 4)
+- Current Execution Context (Delay elapsed, Available Capital)
+
+**Outputs (`DecisionResult`):**
+- **Action**: `EXECUTE`, `PARTIAL_EXECUTION`, or `DELAY`
+- **Execution Amount**: Recommended swap amount
+- **Recommended Delay**: Seconds to wait before next evaluation (if delayed)
+- **Score**: 0–10000 normalized score indicating the favorability of current conditions
+- **Diagnostics**: Traceable record of market, yield, and strategy scores for explainability
+
+**Scoring Model:**
+The heuristic model scores three components and weights them using configurable coefficients (default 35% Market, 25% Yield, 40% Strategy).
+- **Market Score**: Evaluates price deviation from TWAP, volatility, slippage, liquidity, and price impact.
+- **Yield Score**: Evaluates current APY, urgency, and the modeled opportunity cost/benefit of waiting.
+- **Strategy Score**: Evaluates time-window urgency and available capital constraints.
+
+If the score crosses `executeThresholdBps` (default 65%), it executes. Between `partialThresholdBps` (default 40%) and execute, it performs a partial execution. Otherwise, it delays unless the maximum delay window is exhausted.
 
 ### Frontend (React + Vite + TailwindCSS)
 The frontend serves as the primary dashboard to view DCA strategies, vault assets, market analytics, and yield projections. It aggregates these metrics cleanly without modifying contract state directly (except for user wallet interactions like `connect`).
