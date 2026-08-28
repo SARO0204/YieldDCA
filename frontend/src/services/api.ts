@@ -1,4 +1,3 @@
-// Simple types matching the backend endpoints
 export interface DashboardData {
   vault: {
     totalAssets: string;
@@ -23,6 +22,11 @@ export interface DashboardData {
     projectedYield7D: string;
     projectedYield30D: string;
     projectedYield365D: string;
+    estimatedWaitingYield: string;
+    opportunityCost: string;
+    waitingBenefit: string;
+    urgency: string;
+    recommendation: number;
   };
   strategy: any | null;
 }
@@ -36,5 +40,19 @@ export async function fetchDashboard(userAddress?: string, strategyId?: string):
 
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error('Failed to fetch dashboard data');
+  return res.json();
+}
+
+export async function fetchExecutionHistory(strategyId: string): Promise<{ history: any[] }> {
+  const url = new URL(`${API_BASE}/executions/${strategyId}`);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error('Failed to fetch execution history');
+  return res.json();
+}
+
+export async function fetchSchedulerStatus(): Promise<any> {
+  const url = new URL(`${API_BASE}/scheduler/status`);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error('Failed to fetch scheduler status');
   return res.json();
 }

@@ -1,129 +1,68 @@
-# Yield-Aware DCA System
+# Yield-Aware DCA Prototype
 
-A modular, capital-efficient Dollar-Cost Averaging (DCA) protocol for Ethereum.
+## 1. Problem
+Standard Dollar Cost Averaging (DCA) executes trades strictly on a time basis, ignoring market conditions and available yield. This results in users buying during high volatility, suffering high slippage, and missing out on yield while their capital sits idle waiting for the next execution.
 
-## Overview
+## 2. Solution
+Yield-Aware DCA introduces a deterministic, mathematically bounded system that analyzes market quality and waiting-opportunity cost to dynamically delay or resize DCA executions. While waiting, user capital earns yield in an ERC-4626 vault.
 
-The Yield-Aware DCA System routes deposited capital into an ERC-4626 yield-bearing vault, earning yield while waiting for the next DCA execution.
+## 3. Architecture
+The system consists of modular smart contracts:
+- **DCAEngine**: Strategy registry and state management.
+- **YieldVault**: ERC-4626 vault holding user capital.
+- **MarketAnalyzer**: Evaluates price deviation, TWAP, volatility, and liquidity.
+- **YieldAnalyzer**: Computes opportunity costs versus APY.
+- **DecisionEngine**: Pure analytical module calculating deterministic execution scores (EXECUTE, PARTIAL, DELAY).
+- **ExecutionManager**: Orchestrates atomic execution, ensuring vault withdrawals and swaps revert together if slippage occurs.
+- **DCAExecutionHook**: Uniswap v4 Hook that restricts pool access to authorized DCA executors.
 
-Currently implemented modules:
-* Module 1 — DCA Strategy Management
-* Module 2 — ERC-4626 Yield Vault
-* Module 3 — Market Data & Market-State Analysis
-* Module 4 — Yield Analysis
-* Module 5 — Yield-Aware DCA Decision Engine
+## 4. Modules
+This repository contains Modules 1 through 14 of the Yield-Aware DCA system, complete with Solidity contracts, a Node.js API, a React frontend, and a demo orchestrator.
 
-## Architecture
+## 5. Technology Stack
+- **Smart Contracts**: Solidity (0.8.24), Foundry, OpenZeppelin v5, Uniswap v4 (prerelease).
+- **Backend**: Node.js, Express, TypeScript, ethers.js v6.
+- **Frontend**: React, Vite, TailwindCSS, ethers.js.
 
-```text
-Frontend
-   ↓
-Backend API
-   ↓
-Contract Services (ethers.js)
-   ↓
-Ethereum / Anvil (Local Node)
-   ↓
-Modules 1–5 (Smart Contracts)
-```
+## 6. Decision Algorithm
+The Decision Engine computes a composite score based on:
+1. **Market Quality**: Penalizes high volatility, high slippage, and poor price deviation from TWAP.
+2. **Yield Benefit**: Evaluates if the current APY outweighs the expected opportunity cost of delaying.
+3. **Strategy Constraints**: Ensures max delay, minimum executions, and allocation limits are respected.
 
-## Local Development Flow
+## 7. ERC-4626 Role
+User capital is deposited into `YieldVault`, an ERC-4626 compliant vault. The `ExecutionManager` is granted temporary operator privileges to atomically withdraw only the exact approved execution amount during a DCA cycle.
 
-1. **Start Anvil (Local Blockchain):**
-   ```powershell
-   anvil
-   ```
+## 8. Uniswap v4 Hook Role
+`DCAExecutionHook` acts as a specialized BeforeSwap hook on a Uniswap v4 pool. It verifies that the `msg.sender` of the swap is an authorized `SwapExecutor`, providing strict execution sandboxing.
 
-2. **Deploy Contracts:**
-   Open a new terminal and deploy the smart contracts.
-   ```powershell
-   .\forge.exe script script/DeployDCA.s.sol:DeployDCA --rpc-url http://127.0.0.1:8545 --broadcast
-   ```
-   Take note of the deployed contract addresses from the output.
+## 9. Security Model
+- **Non-Custodial**: The backend holds no private keys.
+- **Atomicity**: The `ExecutionManager` guarantees that if a swap fails (e.g. slippage), the vault withdrawal reverts.
+- **Role-Based Access**: The `YieldVault` restricts withdrawals to authorized operators.
 
-3. **Backend Setup:**
-   Navigate to the backend directory, copy `.env.example` to `.env`, and populate the contract addresses:
-   ```powershell
-   cd backend
-   npm install
-   # Update .env with addresses from step 2
-   npm run dev
-   ```
+## 10. Local Setup
+1. Clone the repository.
+2. Run `forge build` and `forge test`.
+3. Start Anvil: `anvil`.
+4. Deploy contracts (see deployment instructions).
+5. Start backend: `cd backend && npm run dev`.
+6. Start frontend: `cd frontend && npm run dev`.
 
-4. **Frontend Setup:**
-   In a new terminal, navigate to the frontend directory:
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   Open `http://localhost:5173` to view the Dashboard. Connect your wallet using the Anvil test network (Chain ID: 31337).
+## 11. Test Instructions
+- Smart Contracts: `forge test -vvv`
+- Backend: `cd backend && npm test`
 
-## Application Layer (Modules 1-5 Integration)
+## 12. Demo Instructions
+See [docs/DEMO.md](docs/DEMO.md) for full instructions on running the deterministic simulation.
 
-### Module 5: Yield-Aware DCA Decision Engine
-The Decision Engine orchestrates intelligence from Modules 1-4 to make deterministic DCA execution decisions.
+## 13. Known Limitations
+- Runs on local Anvil testnet.
+- Relies on mock tokens, mock market data, and simulated yield.
+- Slippage protection can be bypassed intentionally by authorized callers for testing.
+- Uses prerelease Uniswap v4 hook abstractions.
 
-**Core Inputs:**
-- DCA Strategy (Module 1)
-- Market State (Module 3)
-- Yield Analysis (Module 4)
-- Current Execution Context (Delay elapsed, Available Capital)
-
-**Outputs (`DecisionResult`):**
-- **Action**: `EXECUTE`, `PARTIAL_EXECUTION`, or `DELAY`
-- **Execution Amount**: Recommended swap amount
-- **Recommended Delay**: Seconds to wait before next evaluation (if delayed)
-- **Score**: 0–10000 normalized score indicating the favorability of current conditions
-- **Diagnostics**: Traceable record of market, yield, and strategy scores for explainability
-
-**Scoring Model:**
-The heuristic model scores three components and weights them using configurable coefficients (default 35% Market, 25% Yield, 40% Strategy).
-- **Market Score**: Evaluates price deviation from TWAP, volatility, slippage, liquidity, and price impact.
-- **Yield Score**: Evaluates current APY, urgency, and the modeled opportunity cost/benefit of waiting.
-- **Strategy Score**: Evaluates time-window urgency and available capital constraints.
-
-If the score crosses `executeThresholdBps` (default 65%), it executes. Between `partialThresholdBps` (default 40%) and execute, it performs a partial execution. Otherwise, it delays unless the maximum delay window is exhausted.
-
-### Frontend (React + Vite + TailwindCSS)
-The frontend serves as the primary dashboard to view DCA strategies, vault assets, market analytics, and yield projections. It aggregates these metrics cleanly without modifying contract state directly (except for user wallet interactions like `connect`).
-
-* **Environment configuration:** None strictly required. It connects to the backend API.
-* **Commands:**
-  * Install: `npm install`
-  * Dev: `npm run dev`
-  * Build: `npm run build`
-
-### Backend (Node.js + Express)
-The backend provides read-only API endpoints to aggregate state from multiple contracts across Modules 1-4. It serves JSON endpoints for the dashboard and persists historical metrics into a lightweight local JSON database.
-
-* **Environment (`backend/.env`):**
-  * `PORT=3000`
-  * `RPC_URL=http://127.0.0.1:8545`
-  * `CHAIN_ID=31337`
-  * `DCA_ENGINE_ADDRESS=`
-  * `YIELD_VAULT_ADDRESS=`
-  * `MARKET_ANALYZER_ADDRESS=`
-  * `MOCK_MARKET_PROVIDER_ADDRESS=`
-  * `YIELD_ANALYZER_ADDRESS=`
-  * `MOCK_ERC20_ADDRESS=`
-
-* **API Endpoints:**
-  * `GET /api/health` - Healthcheck
-  * `GET /api/dashboard?user=<address>&strategy=<id>` - Aggregated dashboard metrics
-
-* **Commands:**
-  * Install: `npm install`
-  * Dev: `npm run dev`
-  * Build: `npm run build`
-  * Test: `npm test`
-
-## Smart Contracts Build & Testing
-
-The contracts use Foundry. All 76 tests currently pass.
-
-```powershell
-.\forge.exe build
-.\forge.exe test -vvv
-.\forge.exe fmt --check
-```
+## 14. Future Improvements
+- External professional audit.
+- Mainnet integration with Gelato for decentralized execution.
+- Mainnet Chainlink integration for market data.

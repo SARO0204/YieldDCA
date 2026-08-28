@@ -41,3 +41,38 @@ export async function checkExecutionStatus(strategyId: string | number) {
     remainingDelay: remainingDelay.toString()
   };
 }
+
+export async function getActiveStrategies() {
+  const count = await getStrategyCount();
+  const activeIds: string[] = [];
+  for (let i = 1; i <= Number(count); i++) {
+    try {
+      const strat = await contracts.dcaEngine.getStrategy(i);
+      if (Number(strat.status) === 1) { // ACTIVE
+        activeIds.push(i.toString());
+      }
+    } catch (e) {
+      // Ignore not found
+    }
+  }
+  return activeIds;
+}
+
+export async function getStrategyState(strategyId: string | number) {
+  const strategy = await getStrategy(strategyId);
+  let record: any = { totalExecuted: "0", lastExecutionTimestamp: "0", nonce: "0" };
+  try {
+    const rec = await contracts.executionManager.getExecutionRecord(strategyId);
+    record = {
+      totalExecuted: rec.totalExecuted.toString(),
+      lastExecutionTimestamp: rec.lastExecutionTimestamp.toString(),
+      nonce: rec.nonce.toString()
+    };
+  } catch (e) {
+    // defaults
+  }
+  return {
+    ...strategy,
+    record
+  };
+}

@@ -53,3 +53,63 @@ export async function withdrawVault(provider: ethers.BrowserProvider, amount: st
   const tx = await vault.withdraw(amount, receiver, owner);
   return await tx.wait();
 }
+
+// Faucet for testing
+export async function mintUsdc(provider: ethers.BrowserProvider, amount: string, to: string) {
+  const signer = await provider.getSigner();
+  const mockErc20 = contracts.mockErc20(signer);
+  const tx = await mockErc20.mint(to, amount);
+  return await tx.wait();
+}
+
+// Module 6: ExecutionManager integration
+export async function executeDecision(
+  provider: ethers.BrowserProvider,
+  strategyId: string,
+  decision: any,
+  expectedNonce: string,
+  minSwapOutput: string
+) {
+  const signer = await provider.getSigner();
+  const executionManager = contracts.executionManager(signer);
+  
+  // decision parameter needs to match IDecisionEngine.DecisionResult struct
+  const tx = await executionManager.executeDecision(
+    strategyId,
+    {
+      action: decision.action,
+      targetAmount: decision.targetAmount,
+      executionAmount: decision.executionAmount,
+      remainingAmount: decision.remainingAmount,
+      recommendedDelay: decision.recommendedDelay,
+      score: decision.score,
+      reason: decision.reason,
+      timestamp: decision.timestamp,
+      diagnostics: {
+        price: decision.diagnostics.price,
+        twap: decision.diagnostics.twap,
+        priceDeviation: decision.diagnostics.priceDeviation,
+        volatility: decision.diagnostics.volatility,
+        liquidity: decision.diagnostics.liquidity,
+        slippage: decision.diagnostics.slippage,
+        priceImpact: decision.diagnostics.priceImpact,
+        currentAPY: decision.diagnostics.currentAPY,
+        estimatedWaitingYield: decision.diagnostics.estimatedWaitingYield,
+        opportunityCost: decision.diagnostics.opportunityCost,
+        waitingBenefit: decision.diagnostics.waitingBenefit,
+        marketScore: decision.diagnostics.marketScore,
+        yieldScore: decision.diagnostics.yieldScore,
+        strategyScore: decision.diagnostics.strategyScore,
+        minimumExecutionSatisfied: decision.diagnostics.minimumExecutionSatisfied,
+        maximumExecutionSatisfied: decision.diagnostics.maximumExecutionSatisfied,
+        remainingAllocationSatisfied: decision.diagnostics.remainingAllocationSatisfied,
+        capitalAvailable: decision.diagnostics.capitalAvailable,
+        delayAllowed: decision.diagnostics.delayAllowed,
+        strategyActive: decision.diagnostics.strategyActive
+      }
+    },
+    expectedNonce,
+    minSwapOutput
+  );
+  return await tx.wait();
+}

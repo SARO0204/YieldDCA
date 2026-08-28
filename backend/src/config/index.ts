@@ -12,6 +12,14 @@ export interface AppConfig {
     mockMarketProvider: string;
     yieldAnalyzer: string;
     mockErc20: string;
+    decisionEngine: string;
+    executionManager: string;
+    mockSwapExecutor: string;
+  };
+  scheduler: {
+    enabled: boolean;
+    intervalMs: number;
+    maxRetries: number;
   };
 }
 
@@ -36,9 +44,17 @@ export function loadConfig(): AppConfig {
       dcaEngine: requireEnv("DCA_ENGINE_ADDRESS"),
       yieldVault: requireEnv("YIELD_VAULT_ADDRESS"),
       marketAnalyzer: requireEnv("MARKET_ANALYZER_ADDRESS"),
-      mockMarketProvider: requireEnv("MOCK_MARKET_PROVIDER_ADDRESS"),
+      mockMarketProvider: optionalEnv("MOCK_MARKET_PROVIDER_ADDRESS", ""),
       yieldAnalyzer: requireEnv("YIELD_ANALYZER_ADDRESS"),
       mockErc20: requireEnv("MOCK_ERC20_ADDRESS"),
+      decisionEngine: requireEnv("DECISION_ENGINE_ADDRESS"),
+      executionManager: requireEnv("EXECUTION_MANAGER_ADDRESS"),
+      mockSwapExecutor: requireEnv("MOCK_SWAP_EXECUTOR_ADDRESS"),
     },
+    scheduler: {
+      enabled: optionalEnv("SCHEDULER_ENABLED", "false") === "true",
+      intervalMs: parseInt(optionalEnv("SCHEDULER_INTERVAL_MS", "60000"), 10),
+      maxRetries: parseInt(optionalEnv("SCHEDULER_MAX_RETRIES", "3"), 10),
+    }
   };
 }

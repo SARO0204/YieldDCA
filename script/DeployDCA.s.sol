@@ -9,12 +9,15 @@ import {MockERC20} from "../src/mocks/MockERC20.sol";
 import {MockMarketDataProvider} from "../src/market/MockMarketDataProvider.sol";
 import {MarketAnalyzer} from "../src/market/MarketAnalyzer.sol";
 import {YieldAnalyzer} from "../src/yield/YieldAnalyzer.sol";
+import {DecisionEngine} from "../src/decision/DecisionEngine.sol";
+import {ExecutionManager} from "../src/execution/ExecutionManager.sol";
+import {MockSwapExecutor} from "../src/mocks/MockSwapExecutor.sol";
 
 /**
  * @title DeployDCA
- * @notice Deployment script for Modules 1–4 of the Yield-Aware DCA System.
- * @dev Deploys MockERC20 (USDC), DCAEngine, YieldVault, MockMarketDataProvider,
- *      MarketAnalyzer, and YieldAnalyzer using private key from environment variables.
+ * @notice Deployment script for Modules 1–6 of the Yield-Aware DCA System.
+ * @dev Deploys MockERC20 (USDC and WETH), DCAEngine, YieldVault, MockMarketDataProvider,
+ *      MarketAnalyzer, YieldAnalyzer, DecisionEngine, MockSwapExecutor, and ExecutionManager.
  */
 contract DeployDCA is Script {
     // Default Anvil Account #0 private key for local development
@@ -24,24 +27,31 @@ contract DeployDCA is Script {
         external
         returns (
             MockERC20 mockUSDC,
+            MockERC20 mockWETH,
             DCAEngine engine,
             YieldVault vault,
             MockMarketDataProvider mockProvider,
             MarketAnalyzer marketAnalyzer,
-            YieldAnalyzer yieldAnalyzer
+            YieldAnalyzer yieldAnalyzer,
+            DecisionEngine decisionEngine,
+            MockSwapExecutor swapExecutor,
+            ExecutionManager executionManager
         )
     {
         uint256 deployerKey = vm.envOr("PRIVATE_KEY", DEFAULT_ANVIL_KEY);
         address deployer = vm.addr(deployerKey);
 
-        console2.log("Starting YieldDCA deployment (Modules 1-4)...");
+        console2.log("Starting YieldDCA deployment (Modules 1-6)...");
         console2.log("Deployer address:", deployer);
 
         vm.startBroadcast(deployerKey);
 
-        // 1. Deploy Mock Underlying Token (USDC, 6 decimals)
+        // 1. Deploy Mock Tokens
         mockUSDC = new MockERC20("USD Coin", "USDC", 6);
         console2.log("MockERC20 (USDC) deployed at:", address(mockUSDC));
+
+        mockWETH = new MockERC20("Wrapped Ether", "WETH", 18);
+        console2.log("MockERC20 (WETH) deployed at:", address(mockWETH));
 
         // 2. Deploy Module 1: DCA Strategy Management Engine
         engine = new DCAEngine();
@@ -60,11 +70,30 @@ contract DeployDCA is Script {
         console2.log("MarketAnalyzer deployed at:", address(marketAnalyzer));
 
         // 6. Deploy Module 4: Yield Analyzer
-        yieldAnalyzer = new YieldAnalyzer(address(vault), msg.sender);
+        yieldAnalyzer = new YieldAnalyzer(address(vault), deployer);
         console2.log("YieldAnalyzer deployed at:", address(yieldAnalyzer));
+
+        // 7. Deploy Module 5: Decision Engine
+        decisionEngine = new DecisionEngine(deployer);
+        console2.log("DecisionEngine deployed at:", address(decisionEngine));
+
+        // 8. Deploy Mock Swap Executor (1:1 mock rate based on 6 decimals = 1e6)
+        swapExecutor = new MockSwapExecutor(address(mockWETH), 1e6);
+        console2.log("MockSwapExecutor deployed at:", address(swapExecutor));
+
+        // Mint some WETH to the mock executor so it can pay out swaps
+        mockWETH.mint(address(swapExecutor), 1_000_000e18);
+
+        // 9. Deploy Module 6: Execution Manager
+        executionManager = new ExecutionManager(deployer, address(engine), address(vault), address(swapExecutor));
+        console2.log("ExecutionManager deployed at:", address(executionManager));
+
+        // 10. Authorize ExecutionManager in YieldVault
+        vault.setAuthorizedOperator(address(executionManager), true);
+        console2.log("ExecutionManager authorized in YieldVault");
 
         vm.stopBroadcast();
 
-        console2.log("Deployment complete! All Modules 1-4 deployed.");
+        console2.log("Deployment complete! All Modules 1-6 deployed.");
     }
 }

@@ -12,12 +12,23 @@ router.get("/", async (req, res, next) => {
     const dashboardData = await getDashboardData(userAddress, strategyId);
     
     // Optionally snapshot the market and yield data
-    if (dashboardData.market) {
-      insertMarketSnapshot(dashboardData.market);
-    }
-    if (dashboardData.vault) {
-      insertYieldSnapshot(dashboardData.vault);
-    }
+    if (dashboardData.market) insertMarketSnapshot(dashboardData.market);
+    if (dashboardData.vault) insertYieldSnapshot(dashboardData.vault);
+
+    res.json(dashboardData);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/dashboard/:strategyId
+router.get("/:strategyId", async (req, res, next) => {
+  try {
+    const { strategyId } = req.params;
+    const dashboardData = await getDashboardData(undefined, strategyId);
+    
+    if (dashboardData.market) insertMarketSnapshot(dashboardData.market);
+    if (dashboardData.vault) insertYieldSnapshot(dashboardData.vault);
 
     res.json(dashboardData);
   } catch (error) {

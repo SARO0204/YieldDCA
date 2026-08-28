@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../hooks/useWallet';
-import { depositVault, withdrawVault } from '../services/transactions';
-import { Loader2 } from 'lucide-react';
+import { depositVault, withdrawVault, mintUsdc } from '../services/transactions';
+import { Loader2, Coins } from 'lucide-react';
 
 export const VaultActions: React.FC = () => {
   const { provider, address } = useWallet();
@@ -38,9 +38,36 @@ export const VaultActions: React.FC = () => {
     }
   };
 
+  const handleFaucet = async () => {
+    if (!provider || !address) return setError('Wallet not connected');
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const mintAmount = ethers.parseUnits('10000', 6); // Mint 10,000 USDC
+      await mintUsdc(provider, mintAmount.toString(), address);
+      setSuccess('Minted 10,000 mock USDC successfully!');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.reason || err.message || 'Faucet failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-      <h3 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Manage Capital</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Manage Capital</h3>
+        <button
+          onClick={handleFaucet}
+          disabled={loading || !provider}
+          className="text-xs bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 font-medium py-1 px-2.5 rounded border border-indigo-500/30 flex items-center gap-1 transition"
+        >
+          <Coins size={12} />
+          Faucet (Mock USDC)
+        </button>
+      </div>
       
       {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
       {success && <div className="mb-4 text-sm text-green-400">{success}</div>}

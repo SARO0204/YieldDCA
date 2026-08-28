@@ -10,9 +10,13 @@ const dbPath = path.join(DB_DIR, 'db.json');
 
 function readDb() {
   if (!fs.existsSync(dbPath)) {
-    return { historical_market: [], historical_yield: [] };
+    return { historical_market: [], historical_yield: [], executions: [], scheduler_jobs: [], decision_history: [] };
   }
-  return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  if (!db.executions) db.executions = [];
+  if (!db.scheduler_jobs) db.scheduler_jobs = [];
+  if (!db.decision_history) db.decision_history = [];
+  return db;
 }
 
 function writeDb(data: any) {
@@ -42,3 +46,49 @@ export function insertYieldSnapshot(vaultState: any) {
   });
   writeDb(db);
 }
+
+export function insertExecutionRecord(execution: any) {
+  const db = readDb();
+  db.executions.push({
+    ...execution,
+    created_at: new Date().toISOString()
+  });
+  writeDb(db);
+}
+
+export function getExecutionHistory(strategyId: string | number) {
+  const db = readDb();
+  return db.executions.filter((e: any) => String(e.strategyId) === String(strategyId));
+}
+
+// Module 11 Scheduler & Decision persistence
+export function getSchedulerJob(jobId: string) {
+  const db = readDb();
+  return db.scheduler_jobs.find((j: any) => j.jobId === jobId);
+}
+
+export function getAllSchedulerJobs() {
+  const db = readDb();
+  return db.scheduler_jobs;
+}
+
+export function upsertSchedulerJob(job: any) {
+  const db = readDb();
+  const idx = db.scheduler_jobs.findIndex((j: any) => j.jobId === job.jobId);
+  if (idx >= 0) {
+    db.scheduler_jobs[idx] = { ...db.scheduler_jobs[idx], ...job, updated_at: new Date().toISOString() };
+  } else {
+    db.scheduler_jobs.push({ ...job, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+  }
+  writeDb(db);
+}
+
+export function insertDecisionHistory(decision: any) {
+  const db = readDb();
+  db.decision_history.push({
+    ...decision,
+    created_at: new Date().toISOString()
+  });
+  writeDb(db);
+}
+
