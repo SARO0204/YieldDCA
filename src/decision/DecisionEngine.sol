@@ -192,8 +192,13 @@ contract DecisionEngine is IDecisionEngine, Ownable {
         result.diagnostics.strategyScore = vars.strategyScore;
 
         // 6. Final weighted score
-        vars.finalScore = (vars.marketScore * cfg.marketWeightBps + vars.yieldScore * cfg.yieldWeightBps
-            + vars.strategyScore * cfg.strategyWeightBps) / BPS;
+        vars.finalScore =
+            (vars.marketScore
+                    * cfg.marketWeightBps
+                    + vars.yieldScore
+                    * cfg.yieldWeightBps
+                    + vars.strategyScore
+                    * cfg.strategyWeightBps) / BPS;
         result.score = vars.finalScore;
 
         // 7. Maximum-delay override: must not DELAY when window is exhausted
@@ -215,9 +220,8 @@ contract DecisionEngine is IDecisionEngine, Ownable {
             })
         );
 
-        result.remainingAmount = vars.remainingAllocation > result.executionAmount
-            ? vars.remainingAllocation - result.executionAmount
-            : 0;
+        result.remainingAmount =
+            vars.remainingAllocation > result.executionAmount ? vars.remainingAllocation - result.executionAmount : 0;
     }
 
     // -------------------------------------------------------------------------
@@ -243,10 +247,11 @@ contract DecisionEngine is IDecisionEngine, Ownable {
      *      - priceDeviation: 1e18 scale, signed.
      *      - slippage/priceImpact: already in BPS from MarketAnalyzer.
      */
-    function _computeMarketScore(
-        MarketDataTypes.MarketState calldata market,
-        DecisionConfig memory cfg
-    ) internal pure returns (uint256 score) {
+    function _computeMarketScore(MarketDataTypes.MarketState calldata market, DecisionConfig memory cfg)
+        internal
+        pure
+        returns (uint256 score)
+    {
         // Factor 1: Price deviation (favorable = negative, buying below TWAP)
         uint256 deviationScore;
         if (market.twap == 0) {
@@ -279,9 +284,8 @@ contract DecisionEngine is IDecisionEngine, Ownable {
         } else {
             // Linearly degrade: at 2× threshold => score 0
             uint256 excess = volBps - cfg.volatilityThresholdBps;
-            volatilityScore = excess >= cfg.volatilityThresholdBps
-                ? 0
-                : BPS - (excess * BPS) / cfg.volatilityThresholdBps;
+            volatilityScore =
+                excess >= cfg.volatilityThresholdBps ? 0 : BPS - (excess * BPS) / cfg.volatilityThresholdBps;
         }
 
         // Factor 3: Slippage (already in BPS)
@@ -357,11 +361,11 @@ contract DecisionEngine is IDecisionEngine, Ownable {
      *      We use it directly for the urgency contribution (70% weight).
      *      Execution feasibility (can we actually execute?) contributes the remaining 30%.
      */
-    function _computeStrategyScore(
-        uint256 urgency,
-        IDCAStrategy.Strategy calldata strategy,
-        uint256 executionCap
-    ) internal pure returns (uint256 score) {
+    function _computeStrategyScore(uint256 urgency, IDCAStrategy.Strategy calldata strategy, uint256 executionCap)
+        internal
+        pure
+        returns (uint256 score)
+    {
         // urgency is already 0–10000 from Module 4
         uint256 urgencyScore = urgency; // 0–10000
 
@@ -399,12 +403,7 @@ contract DecisionEngine is IDecisionEngine, Ownable {
     function _determineAction(ActionContext memory ctx)
         internal
         pure
-        returns (
-            DecisionAction action,
-            uint256 executionAmount,
-            uint256 recommendedDelay,
-            string memory reason
-        )
+        returns (DecisionAction action, uint256 executionAmount, uint256 recommendedDelay, string memory reason)
     {
         _DecisionVars memory v;
         v.canExecuteMin = ctx.executionCap >= ctx.strategy.minExecutionAmount;
@@ -445,7 +444,8 @@ contract DecisionEngine is IDecisionEngine, Ownable {
 
         // DELAY
         if (v.delayAllowed) {
-            uint256 delay = v.remainingDelay < ctx.cfg.recommendedDelaySeconds ? v.remainingDelay : ctx.cfg.recommendedDelaySeconds;
+            uint256 delay =
+                v.remainingDelay < ctx.cfg.recommendedDelaySeconds ? v.remainingDelay : ctx.cfg.recommendedDelaySeconds;
             return (
                 DecisionAction.DELAY,
                 0,
@@ -465,27 +465,14 @@ contract DecisionEngine is IDecisionEngine, Ownable {
             );
         }
 
-        return (
-            DecisionAction.DELAY,
-            0,
-            0,
-            "Insufficient capital and delay window closing. No valid execution possible."
-        );
+        return
+            (DecisionAction.DELAY, 0, 0, "Insufficient capital and delay window closing. No valid execution possible.");
     }
 
-    function _handleMaxDelayReached(
-        bool canExecuteMin,
-        uint256 executionCap,
-        IDCAStrategy.Strategy memory strategy
-    )
+    function _handleMaxDelayReached(bool canExecuteMin, uint256 executionCap, IDCAStrategy.Strategy memory strategy)
         internal
         pure
-        returns (
-            DecisionAction,
-            uint256,
-            uint256,
-            string memory
-        )
+        returns (DecisionAction, uint256, uint256, string memory)
     {
         if (!canExecuteMin) {
             return (
@@ -550,10 +537,11 @@ contract DecisionEngine is IDecisionEngine, Ownable {
      * @notice Returns remaining allocation based on execution context.
      * @dev If totalExecutedSoFar exceeds targetAllocation, returns 0.
      */
-    function _remainingAllocation(
-        IDCAStrategy.Strategy calldata strategy,
-        ExecutionContext calldata execContext
-    ) internal pure returns (uint256) {
+    function _remainingAllocation(IDCAStrategy.Strategy calldata strategy, ExecutionContext calldata execContext)
+        internal
+        pure
+        returns (uint256)
+    {
         if (execContext.totalExecutedSoFar >= strategy.targetAllocation) return 0;
         return strategy.targetAllocation - execContext.totalExecutedSoFar;
     }
@@ -569,14 +557,11 @@ contract DecisionEngine is IDecisionEngine, Ownable {
         uint256 remainingAllocation
     ) internal pure returns (string memory) {
         if (yield.waitingBenefit > 0 && score >= 8000) {
-            return
-                "Market conditions are highly favorable: price deviation is attractive, liquidity is sufficient, and price impact is low. Vault yield is also attractive but execution conditions dominate. Full DCA execution is recommended.";
+            return "Market conditions are highly favorable: price deviation is attractive, liquidity is sufficient, and price impact is low. Vault yield is also attractive but execution conditions dominate. Full DCA execution is recommended.";
         } else if (availableCapital >= remainingAllocation) {
-            return
-                "Market conditions are favorable and sufficient capital is available. Estimated slippage and price impact are within acceptable thresholds. Executing the full permitted allocation.";
+            return "Market conditions are favorable and sufficient capital is available. Estimated slippage and price impact are within acceptable thresholds. Executing the full permitted allocation.";
         } else {
-            return
-                "Composite score meets the execution threshold. Market, yield, and strategy urgency factors collectively favor immediate DCA execution within available capital constraints.";
+            return "Composite score meets the execution threshold. Market, yield, and strategy urgency factors collectively favor immediate DCA execution within available capital constraints.";
         }
     }
 
@@ -586,19 +571,17 @@ contract DecisionEngine is IDecisionEngine, Ownable {
         returns (string memory)
     {
         if (yield.waitingBenefit < 0) {
-            return
-                "The modeled waiting benefit is negative (opportunity cost exceeds estimated yield). Market conditions are mixed. Partial execution maintains DCA progress while limiting exposure to current market risk.";
+            return "The modeled waiting benefit is negative (opportunity cost exceeds estimated yield). Market conditions are mixed. Partial execution maintains DCA progress while limiting exposure to current market risk.";
         } else if (score >= 5000) {
-            return
-                "Market and yield conditions are moderately favorable. High volatility or elevated price impact makes full execution inadvisable. Partial execution maintains DCA progress while reducing execution risk.";
+            return "Market and yield conditions are moderately favorable. High volatility or elevated price impact makes full execution inadvisable. Partial execution maintains DCA progress while reducing execution risk.";
         } else {
-            return
-                "Composite conditions score above the partial execution threshold. A partial DCA execution balances progress against current market and yield uncertainty.";
+            return "Composite conditions score above the partial execution threshold. A partial DCA execution balances progress against current market and yield uncertainty.";
         }
     }
 
     function _buildDelayReason(
-        uint256 /* score */,
+        uint256,
+        /* score */
         YieldDataTypes.YieldAnalysis memory yield,
         uint256 remainingAllocation,
         uint256 availableCapital
@@ -606,11 +589,9 @@ contract DecisionEngine is IDecisionEngine, Ownable {
         if (availableCapital < remainingAllocation && availableCapital == 0) {
             return "No capital is currently available in the vault. Delaying until capital is deposited.";
         } else if (yield.waitingBenefit > 0 && yield.recommendation == YieldDataTypes.Recommendation.WAIT) {
-            return
-                "Market conditions are unfavorable. Estimated waiting yield currently exceeds the modeled opportunity cost of waiting. Delaying execution to allow market conditions to improve.";
+            return "Market conditions are unfavorable. Estimated waiting yield currently exceeds the modeled opportunity cost of waiting. Delaying execution to allow market conditions to improve.";
         } else {
-            return
-                "Composite decision score is below the execution threshold. Market conditions (volatility, slippage, or price impact) are currently unfavorable. Execution is delayed pending improved conditions.";
+            return "Composite decision score is below the execution threshold. Market conditions (volatility, slippage, or price impact) are currently unfavorable. Execution is delayed pending improved conditions.";
         }
     }
 

@@ -63,11 +63,8 @@ contract DecisionEngineTest is Test {
     }
 
     function _defaultContext() internal pure returns (IDecisionEngine.ExecutionContext memory) {
-        return IDecisionEngine.ExecutionContext({
-            lastExecutionTimestamp: 0,
-            lastExecutionAmount: 0,
-            totalExecutedSoFar: 0
-        });
+        return
+            IDecisionEngine.ExecutionContext({lastExecutionTimestamp: 0, lastExecutionAmount: 0, totalExecutedSoFar: 0});
     }
 
     function _evaluate(
@@ -286,13 +283,11 @@ contract DecisionEngineTest is Test {
         YieldDataTypes.YieldAnalysis memory yield = _defaultYield();
         yield.urgency = 5000;
 
-        IDecisionEngine.DecisionResult memory resultFavorable =
-            _evaluate(strategy, market, yield, 10_000e6, 0);
+        IDecisionEngine.DecisionResult memory resultFavorable = _evaluate(strategy, market, yield, 10_000e6, 0);
 
         // Compare with neutral deviation
         market.priceDeviation = 0;
-        IDecisionEngine.DecisionResult memory resultNeutral =
-            _evaluate(strategy, market, yield, 10_000e6, 0);
+        IDecisionEngine.DecisionResult memory resultNeutral = _evaluate(strategy, market, yield, 10_000e6, 0);
 
         assertGt(resultFavorable.diagnostics.marketScore, resultNeutral.diagnostics.marketScore);
     }
@@ -445,8 +440,7 @@ contract DecisionEngineTest is Test {
             totalExecutedSoFar: 8_000e6 // 8000 already done → 2000 remaining
         });
 
-        IDecisionEngine.DecisionResult memory result =
-            engine.evaluate(strategy, market, yield, 10_000e6, 3 hours, ctx);
+        IDecisionEngine.DecisionResult memory result = engine.evaluate(strategy, market, yield, 10_000e6, 3 hours, ctx);
 
         assertLe(result.executionAmount, 2_000e6); // Cannot exceed remaining
     }
